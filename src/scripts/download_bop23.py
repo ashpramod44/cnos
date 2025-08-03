@@ -43,23 +43,28 @@ def run_download(config_dataset: DictConfig) -> None:
 def download(cfg: DictConfig) -> None:
     OmegaConf.set_struct(cfg, False)
     for dataset_name in [
-        "lmo",
-        "tless",
-        "tudl",
-        "icbin",
-        "itodd",
-        "hb",
-        "ycbv",
+        "lmo"
+        #"tless",
+        #"tudl",
+        #"icbin",
+        #"itodd",
+        #"hb",
+        #"ycbv",
     ]:
         logging.info(f"Downloading {dataset_name}")
         config_dataset = OmegaConf.create(
             {
                 "name": dataset_name,
                 "source_test": osp.join(
-                    cfg.data.source_url, str(cfg.data.datasets[dataset_name].test)
+                    cfg.data.source_url, 
+                    dataset_name, 
+                    "resolve/main" ,
+                    str(cfg.data.datasets[dataset_name].test)
                 ),
                 "source_cad": osp.join(
                     cfg.data.source_url,
+                    dataset_name, 
+                    "resolve/main" ,
                     str(cfg.data.datasets[dataset_name].cad),
                 ),
                 "target_dir": osp.join(cfg.data.root_dir, dataset_name),
