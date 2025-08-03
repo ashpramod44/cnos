@@ -48,8 +48,8 @@ def visualize(cfg: DictConfig) -> None:
     print(f"Number of unique images: {len(list_scene_id_and_frame_id)}")
 
     # subsample randomly only 200 images
-    random.shuffle(list_scene_id_and_frame_id)
-    list_scene_id_and_frame_id = list_scene_id_and_frame_id[:200]
+    #random.shuffle(list_scene_id_and_frame_id)
+    list_scene_id_and_frame_id = list_scene_id_and_frame_id[:] # 200
     print(f"Number of images to visualize: {len(list_scene_id_and_frame_id)}")
 
     os.makedirs(cfg.output_dir, exist_ok=True)
@@ -60,12 +60,13 @@ def visualize(cfg: DictConfig) -> None:
         )
         rgb = img.copy()
         img = np.array(img)
-        masks, object_ids, scores = [], [], []
+        masks, object_ids, scores,bbox = [], [], [], []
         for det in dets:
             if det["scene_id"] == scene_id and det["image_id"] == image_id:
                 masks.append(rle_to_mask(det["segmentation"]))
                 object_ids.append(det["category_id"] - 1)
                 scores.append(det["score"])
+                bbox.append(det["bbox"])
         # color_map = {obj_id: color for obj_id in np.unique(object_ids)}
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         img = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
@@ -85,6 +86,7 @@ def visualize(cfg: DictConfig) -> None:
             img[mask, 1] = alpha * g + (1 - alpha) * img[mask, 1]
             img[mask, 2] = alpha * b + (1 - alpha) * img[mask, 2]
             img[edge, :] = 255
+        img = visualize_bbox(img, bbox,object_ids)
 
         scene_dir = f"{cfg.output_dir}/{cfg.dataset_name}{scene_id:06d}"
         os.makedirs(scene_dir, exist_ok=True)
@@ -102,6 +104,35 @@ def visualize(cfg: DictConfig) -> None:
             logging.info(f"Saving {save_path}")
         counter += 1
 
+def visualize_bbox(img, bbox,object_ids):
+    font  = cv2.FONT_HERSHEY_SIMPLEX
+    scale = 0.5                        # tune to taste
+    thick = 1
+    color = (0, 0, 255)       
+    for bbox,obj_id in zip(bbox,object_ids):
+        x, y, w, h = bbox
+        cv2.rectangle(img, (x, y), (x + w, y + h), color, thick)
+        cv2.putText(img, f"{object_id_to_name_lmo(obj_id)}", (x+w//2, y+h//2), font, scale, color, thick)
+    return img
+def object_id_to_name_lmo(object_id):
+    if object_id == 0:
+        return "APE"
+    elif object_id == 4:
+        return "CAN"
+    elif object_id == 5:
+        return "CAT"
+    elif object_id == 7:
+        return "DRIL"
+    elif object_id == 8:
+        return "DUCK"
+    elif object_id == 9:
+        return "EGG"
+    elif object_id == 10:
+        return "GLUE"
+    elif object_id == 11:
+        return "HOLP"
+    else:
+        return "unknown"
 
 if __name__ == "__main__":
     visualize()
